@@ -20,7 +20,6 @@ _emx_link
 _gestalt
 _posixsubprocess
 ce
-clr
 console
 fcntl
 grp
@@ -733,6 +732,19 @@ def hook__ssl(finder, module):
         for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
             dll_name = os.path.basename(dll_path)
             finder.add_dll(dll_path)
+
+def hook_webview(finder, module):
+    """pywebview requires pythonnet(clr) plus its own DLLs
+    """
+    import glob
+
+    import clr
+    finder.import_hook("clr")
+    finder.add_dll(os.path.join(os.path.dirname(clr.__file__), 'Python.Runtime.dll'))
+
+    import webview
+    for dll_path in glob.glob(os.path.join(webview.__path__[0], 'lib', '*.dll')):
+        finder.add_dll(dll_path)
 
 def hook_wx(finder, module):
     """
