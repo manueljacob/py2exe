@@ -83,7 +83,6 @@ if sys.frozen == "windows_exe":
     del Stderr
 
     class Blackhole(object):
-        softspace = 0
         def write(self, text):
             return len(text)
         def flush(self):
