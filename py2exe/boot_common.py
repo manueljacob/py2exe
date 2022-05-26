@@ -44,20 +44,21 @@
 import sys
 import os
 import ctypes
+import io
 
 ##print("this is boot_common")
 ##print("PATH", repr(sys.path[0]), "thats it.")
 
 if sys.frozen == "windows_exe":
-    class Stderr(object):
+    class BinaryStderr(object):
         _file = None
         _error = None
-        def write(self, text, alert=ctypes.windll.user32.MessageBoxW,
+        def write(self, b, alert=ctypes.windll.user32.MessageBoxW,
                   fname=os.path.splitext(sys.executable)[0] + '.log'):
             if self._file is None and self._error is None:
                 import atexit, os, sys
                 try:
-                    self._file = open(fname, 'a')
+                    self._file = open(fname, 'ab')
                 except Exception as details:
                     self._error = details
                     atexit.register(alert, 0,
@@ -71,23 +72,23 @@ if sys.frozen == "windows_exe":
                                     "Errors in %r" % os.path.basename(sys.executable),
                                     0)
             if self._file is not None:
-                n_written = self._file.write(text)
+                n_written = self._file.write(b)
                 self._file.flush()
                 return n_written
             else:
-                return len(text)
+                return len(b)
         def flush(self):
             if self._file is not None:
                 self._file.flush()
-    sys.stderr = Stderr()
-    del Stderr
+    sys.stderr = io.TextIOWrapper(BinaryStderr(), encoding=sys.stderr.encoding, errors=sys.stderr.errors, line_buffering=sys.stderr.line_buffering, write_through=sys.stderr.write_through)
+    del BinaryStderr
 
     class Blackhole(object):
-        def write(self, text):
-            return len(text)
+        def write(self, b):
+            return len(b)
         def flush(self):
             pass
-    sys.stdout = Blackhole()
+    sys.stdout = io.TextIOWrapper(Blackhole(), encoding=sys.stdout.encoding, errors=sys.stdout.errors, line_buffering=sys.stdout.line_buffering, write_through=sys.stdout.write_through)
     del Blackhole
 del sys, ctypes
 
